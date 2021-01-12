@@ -1,0 +1,13 @@
+build/
+*.log
+*.o
+*/bin/*
+bin
+*.a
+*.old
+*.projbuild
+sdkconfig.old
+sdkconfig
+.cproject
+.project
+.settings
