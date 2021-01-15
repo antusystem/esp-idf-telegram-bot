@@ -7,6 +7,8 @@ This code let you send the method `getMe` and `sendMessage` to a telegram bot us
 
 It work with the function `esp_http_client_perform`, but it has another path with the native example, but this then to crash and force the ESP32 to reboot.
 
+**Note:** when you send Json to the telegram api you have to do it with this format: `{"chat_id":123456789,"text":"Message to send"}`
+
 ## Installation
 
 * Download the latest realase with `git clone https://github.com/antusystem/esp-idf-telegram-bot.git`
@@ -25,7 +27,7 @@ You have to configurate the next **defines** for it to work:
 - **ESP_WIFI_SSID**: you have to introduce your ssid to connect to your wifi network.
 - **ESP_WIFI_PASS**: you have to wrtie your ssid password to connect to your wifi network.
 - **API_KEY**: the API key that Bot Father already gave you when you create your bot.
-- **chat_ID1**: if you know the name of a publi chat write it in this define.
+- **chat_ID1**: if you know the name of a public chat write it in this define.
 - **chat_ID2**: to write yo any type of chat, write its ID in here. This one work for both private and public groups.
 - **LED**: configure if you want to turn on a led connected to a pin.
 
@@ -40,6 +42,12 @@ Check de IDFPATH in the configurations of the proyect
 * Last compile: January 11th, 2021.
 * Last test: January 11th, 2021.
 * Last compile espidf version: v4.2
+
+## (Possibles) To Do
+
+* Read and organize the response Json (probably using Cjson).
+* Discard the native examples from the master branch and create separe functions for getMe and sendMessage.
+* Determinate what other type of data can be send with the esp32 to make the code.
 
 ## License
 MIT License

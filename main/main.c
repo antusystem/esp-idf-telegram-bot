@@ -42,9 +42,9 @@ static const char *TAG3 = "Sending sendMessage";
 #define ESP_MAXIMUM_RETRY  10
 
 /*Telegram configuration*/
-#define API_KEY "YOUR_API_KEY"
+#define TOKEN "YOUR_TOKEN"
 char url_string[512] = "https://api.telegram.org/bot";
-// Using in the task strcat(url_string,API_KEY)); the main direct from the url will be in url_string
+// Using in the task strcat(url_string,TOKEN)); the main direct from the url will be in url_string
 //The chat id that will receive the message
 #define chat_ID1 "@GROUP_NAME"
 #define chat_ID2 "123456789"
@@ -322,7 +322,7 @@ static void https_telegram_getMe_perform(void) {
         .user_data = buffer,        // Pass address of local buffer to get response
     };
     /* Creating the string of the url*/
-    //Copy the url+api
+    //Copy the url+TOKEN
     strcat(url,url_string);
     //Adding the method
     strcat(url,"/getMe");
@@ -378,7 +378,7 @@ static void https_telegram_getMe_native_get(void) {
     esp_http_client_set_method(client, HTTP_METHOD_GET);
     ESP_LOGW(TAG2, "Open");
     /* Creating the string of the url*/
-    //Copy the url+api
+    //Copy the url+TOKEN
     strcat(url,url_string);
     //Adding the method
     strcat(url,"/getMe");
@@ -422,12 +422,12 @@ static void https_telegram_sendMessage_native_get(void) {
 
 
 	/* Format for sending messages
-	https://api.telegram.org/bot[BOT_API_KEY]/sendMessage?chat_id=[CHANNEL_NAME]&text=[MESSAGE_TEXT]
+	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=[CHANNEL_NAME]&text=[MESSAGE_TEXT]
 
 	For public groups you can use
-	https://api.telegram.org/bot[BOT_API_KEY]/sendMessage?chat_id=@GroupName&text=hello%20world
+	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=@GroupName&text=hello%20world
 	For private groups you have to use the chat id (which also works with public groups)
-	https://api.telegram.org/bot[BOT_API_KEY]/sendMessage?chat_id=-1234567890123&text=hello%20world
+	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=-1234567890123&text=hello%20world
 
 	You can add your chat_id or group name, your api key and use your browser to send those messages
 	The %20 is the hexa for the space
@@ -448,7 +448,7 @@ static void https_telegram_sendMessage_native_get(void) {
     ESP_LOGW(TAG3, "Enviare un mensaje a un chat");
     ESP_LOGW(TAG3, "Open");
     /* Creating the string of the url*/
-    //Copy the url+api
+    //Copy the url+TOKEN
     strcat(url,url_string);
     //Then you concatenate the method with the information
     strcat(url,"/sendMessage?chat_id=");
@@ -498,12 +498,12 @@ static void https_telegram_sendMessage_perform_post(void) {
 
 
 	/* Format for sending messages
-	https://api.telegram.org/bot[BOT_API_KEY]/sendMessage?chat_id=[CHANNEL_NAME]&text=[MESSAGE_TEXT]
+	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=[CHANNEL_NAME]&text=[MESSAGE_TEXT]
 
 	For public groups you can use
-	https://api.telegram.org/bot[BOT_API_KEY]/sendMessage?chat_id=@GroupName&text=hello%20world
+	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=@GroupName&text=hello%20world
 	For private groups you have to use the chat id (which also works with public groups)
-	https://api.telegram.org/bot[BOT_API_KEY]/sendMessage?chat_id=-1234567890123&text=hello%20world
+	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=-1234567890123&text=hello%20world
 
 	You can add your chat_id or group name, your api key and use your browser to send those messages
 	The %20 is the hexa for the space
@@ -525,7 +525,7 @@ static void https_telegram_sendMessage_perform_post(void) {
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
     /* Creating the string of the url*/
-    //Copy the url+api
+    //Copy the url+TOKEN
     strcat(url,url_string);
     //Passing the method
     strcat(url,"/sendMessage");
@@ -567,8 +567,8 @@ static void https_telegram_sendMessage_perform_post(void) {
 
 static void http_test_task(void *pvParameters) {
     /* Creating the string of the url*/
-    // You concatenate the host with the api key so you only have to write the method
-	strcat(url_string,API_KEY);
+    // You concatenate the host with the Token so you only have to write the method
+	strcat(url_string,TOKEN);
     ESP_LOGW(TAG, "Wait 2 second before start");
     vTaskDelay(2000 / portTICK_PERIOD_MS);
 
