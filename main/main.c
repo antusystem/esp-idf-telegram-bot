@@ -25,6 +25,7 @@
 #include "esp_http_client.h"
 #include "driver/gpio.h"
 #include "freertos/event_groups.h"
+#include "cJSON.h"
 
 /*HTTP buffer*/
 #define MAX_HTTP_RECV_BUFFER 1024
@@ -37,7 +38,7 @@ static const char *TAG2 = "Sending getMe";
 static const char *TAG3 = "Sending sendMessage";
 
 /*WIFI configuration*/
-#define ESP_WIFI_SSID      "YOUR_SSID_NAME"
+#define ESP_WIFI_SSID      "YOUR_SSID"
 #define ESP_WIFI_PASS      "YOUR_SSID_PASSWORD"
 #define ESP_MAXIMUM_RETRY  10
 
@@ -47,7 +48,7 @@ char url_string[512] = "https://api.telegram.org/bot";
 // Using in the task strcat(url_string,TOKEN)); the main direct from the url will be in url_string
 //The chat id that will receive the message
 #define chat_ID1 "@GROUP_NAME"
-#define chat_ID2 "123456789"
+#define chat_ID2 123456789
 
 //Pin connected to a led
 #define LED (GPIO_NUM_13)
@@ -237,81 +238,59 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt) {
 }
 
 
-/*
- *  http_native_request() demonstrates use of low level APIs to connect to a server,
- *  make a http request and read response. Event handler is not used in this case.
- *  Note: This approach should only be used in case use of low level APIs is required.
- *  The easiest way is to use esp_http_perform()
- */
-static void http_native_request(void) {
-    char output_buffer[MAX_HTTP_OUTPUT_BUFFER] = "";   // Buffer to store response of http request
-    int content_length = 0;
-    esp_http_client_config_t config = {
-        .url = "http://httpbin.org/get",
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-
-    // GET Request
-    esp_http_client_set_method(client, HTTP_METHOD_GET);
-    esp_err_t err = esp_http_client_open(client, 0);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
-    } else {
-        content_length = esp_http_client_fetch_headers(client);
-        if (content_length < 0) {
-            ESP_LOGE(TAG, "HTTP client fetch headers failed");
-        } else {
-            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
-            if (data_read >= 0) {
-                ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %d",
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
-                //ESP_LOG_BUFFER_HEX(TAG, output_buffer, strlen(output_buffer));
-                for(int i = 0; i < esp_http_client_get_content_length(client); i++) {
-                    putchar(output_buffer[i]);
-                }
-                putchar('\r');
-                putchar('\n');
-            } else {
-                ESP_LOGE(TAG, "Failed to read response");
-            }
-        }
-    }
-    esp_http_client_close(client);
-
-    // POST Request
-    const char *post_data = "{\"field1\":\"value1\"}";
-    esp_http_client_set_url(client, "http://httpbin.org/post");
-    esp_http_client_set_method(client, HTTP_METHOD_POST);
-    esp_http_client_set_header(client, "Content-Type", "application/json");
-    err = esp_http_client_open(client, strlen(post_data));
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
-    } else {
-        int wlen = esp_http_client_write(client, post_data, strlen(post_data));
-        if (wlen < 0) {
-            ESP_LOGE(TAG, "Write failed");
-        }
-        int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
-        if (data_read >= 0) {
-            ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %d",
-            esp_http_client_get_status_code(client),
-            esp_http_client_get_content_length(client));
-            //ESP_LOG_BUFFER_HEX(TAG, output_buffer, strlen(output_buffer));
-            for(int i = 0; i < esp_http_client_get_content_length(client); i++) {
-                putchar(output_buffer[i]);
-            }
-            putchar('\r');
-            putchar('\n');
-        } else {
-            ESP_LOGE(TAG, "Failed to read response");
-        }
-    }
-    esp_http_client_cleanup(client);
+char *JSON_Types(int type) {
+	if (type == cJSON_Invalid) return ("cJSON_Invalid");
+	if (type == cJSON_False) return ("cJSON_False");
+	if (type == cJSON_True) return ("cJSON_True");
+	if (type == cJSON_NULL) return ("cJSON_NULL");
+	if (type == cJSON_Number) return ("cJSON_Number");
+	if (type == cJSON_String) return ("cJSON_String");
+	if (type == cJSON_Array) return ("cJSON_Array");
+	if (type == cJSON_Object) return ("cJSON_Object");
+	if (type == cJSON_Raw) return ("cJSON_Raw");
+	return NULL;
 }
 
+void JSON_Analyze(const cJSON * const root) {
+	//ESP_LOGI(TAG, "root->type=%s", JSON_Types(root->type));
+	cJSON *current_element = NULL;
+	//ESP_LOGI(TAG, "roo->child=%p", root->child);
+	//ESP_LOGI(TAG, "roo->next =%p", root->next);
+	cJSON_ArrayForEach(current_element, root) {
+		//ESP_LOGI(TAG, "type=%s", JSON_Types(current_element->type));
+		//ESP_LOGI(TAG, "current_element->string=%p", current_element->string);
+		if (current_element->string) {
+			const char* string = current_element->string;
+			ESP_LOGI(TAG, "[%s]", string);
+		}
+		if (cJSON_IsInvalid(current_element)) {
+			ESP_LOGI(TAG, "Invalid");
+		} else if (cJSON_IsFalse(current_element)) {
+			ESP_LOGI(TAG, "False");
+		} else if (cJSON_IsTrue(current_element)) {
+			ESP_LOGI(TAG, "True");
+		} else if (cJSON_IsNull(current_element)) {
+			ESP_LOGI(TAG, "Null");
+		} else if (cJSON_IsNumber(current_element)) {
+			int valueint = current_element->valueint;
+			double valuedouble = current_element->valuedouble;
+			ESP_LOGI(TAG, "int=%d double=%f", valueint, valuedouble);
+		} else if (cJSON_IsString(current_element)) {
+			const char* valuestring = current_element->valuestring;
+			ESP_LOGI(TAG, "%s", valuestring);
+		} else if (cJSON_IsArray(current_element)) {
+			//ESP_LOGI(TAG, "Array");
+			JSON_Analyze(current_element);
+		} else if (cJSON_IsObject(current_element)) {
+			//ESP_LOGI(TAG, "Object");
+			JSON_Analyze(current_element);
+		} else if (cJSON_IsRaw(current_element)) {
+			ESP_LOGI(TAG, "Raw(Not support)");
+		}
+	}
+}
 
-static void https_telegram_getMe_perform(void) {
+static void https_telegram_getMe(void) {
 	char buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};   // Buffer to store response of http request
 	char url[512] = "";
     esp_http_client_config_t config = {
@@ -342,6 +321,11 @@ static void https_telegram_getMe_perform(void) {
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
         ESP_LOGW(TAG2, "Desde Perform el output es: %s",buffer);
+    	cJSON *root = cJSON_Parse(buffer);
+    	//ESP_LOGW(TAG2, "Recibi el json");
+    	JSON_Analyze(root);
+    	//ESP_LOGW(TAG2, "Borrare el json");
+    	cJSON_Delete(root);
     } else {
         ESP_LOGE(TAG2, "Error perform http request %s", esp_err_to_name(err));
     }
@@ -352,149 +336,7 @@ static void https_telegram_getMe_perform(void) {
     esp_http_client_cleanup(client);
 }
 
-static void https_telegram_getMe_native_get(void) {
-
-	/*	Partiendo de http_native_request
-	 *  http_native_request() demonstrates use of low level APIs to connect to a server,
-	 *  make a http request and read response. Event handler is not used in this case.
-	 *  Note: This approach should only be used in case use of low level APIs is required.
-	 *  The easiest way is to use esp_http_perform()
-	 */
-
-    char output_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};   // Buffer to store response of http request
-    int content_length = 0;
-    char url[512] = "";
-    esp_http_client_config_t config = {
-        .url = "https://api.telegram.org",
-        .transport_type = HTTP_TRANSPORT_OVER_SSL,
-        .event_handler = _http_event_handler,
-        .cert_pem = telegram_certificate_pem_start,
-    };
-    ESP_LOGW(TAG2, "Iniciare 2");
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-
-    // GET Request
-    ESP_LOGW(TAG2, "Method");
-    esp_http_client_set_method(client, HTTP_METHOD_GET);
-    ESP_LOGW(TAG2, "Open");
-    /* Creating the string of the url*/
-    //Copy the url+TOKEN
-    strcat(url,url_string);
-    //Adding the method
-    strcat(url,"/getMe");
-    //ESP_LOGW(TAG2, "url string es: %s",url);
-    //You set the real url for the request
-    esp_http_client_set_url(client, url);
-    esp_err_t err = esp_http_client_open(client, 0);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG2, "Failed to open HTTP connection: %s", esp_err_to_name(err));
-    } else {
-        ESP_LOGW(TAG2, "Fetch");
-        content_length = esp_http_client_fetch_headers(client);
-        if (content_length < 0) {
-            ESP_LOGE(TAG2, "HTTP client fetch headers failed");
-        } else {
-            ESP_LOGW(TAG2, "Response");
-            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
-            if (data_read >= 0) {
-                ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %d",
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
-                //ESP_LOG_BUFFER_CHAR(TAG2, output_buffer, strlen(output_buffer));
-            //    ESP_LOG_BUFFER_HEX(TAG2, output_buffer, strlen(output_buffer));
-                for(int i = 0; i < esp_http_client_get_content_length(client); i++) {
-                    putchar(output_buffer[i]);
-                }
-                putchar('\r');
-                putchar('\n');
-            } else {
-                ESP_LOGE(TAG2, "Failed to read response");
-            }
-        }
-    }
-    ESP_LOGW(TAG2, "Cerrar Cliente");
-    esp_http_client_close(client);
-    esp_http_client_cleanup(client);
-    ESP_LOGI(TAG2, "Desde perform esp_get_free_heap_size: %d", esp_get_free_heap_size ());
-}
-
-static void https_telegram_sendMessage_native_get(void) {
-
-
-	/* Format for sending messages
-	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=[CHANNEL_NAME]&text=[MESSAGE_TEXT]
-
-	For public groups you can use
-	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=@GroupName&text=hello%20world
-	For private groups you have to use the chat id (which also works with public groups)
-	https://api.telegram.org/bot[BOT_TOKEN]/sendMessage?chat_id=-1234567890123&text=hello%20world
-
-	You can add your chat_id or group name, your api key and use your browser to send those messages
-	The %20 is the hexa for the space
-	*/
-
-    char output_buffer[MAX_HTTP_OUTPUT_BUFFER] = {0};   // Buffer to store response of http request
-    int content_length = 0;
-    char url[512] = "";
-    esp_http_client_config_t config = {
-        .url = "https://api.telegram.org",
-        .transport_type = HTTP_TRANSPORT_OVER_SSL,
-        .event_handler = _http_event_handler,
-        .cert_pem = telegram_certificate_pem_start,
-    };
-
-    ESP_LOGW(TAG3, "Iniciare");
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    ESP_LOGW(TAG3, "Enviare un mensaje a un chat");
-    ESP_LOGW(TAG3, "Open");
-    /* Creating the string of the url*/
-    //Copy the url+TOKEN
-    strcat(url,url_string);
-    //Then you concatenate the method with the information
-    strcat(url,"/sendMessage?chat_id=");
-    strcat(url,chat_ID1);
-    /* Now you add the text*/
-    strcat(url,"&text=");
-    //Between every word you have to put %20 for the space (maybe there is another way for this)
-    strcat(url,"Text%20to%20send%20to%20the%20chat");
-    ESP_LOGW(TAG3, "url string es: %s",url);
-    //You set the real url for the request
-    esp_http_client_set_url(client, url);
-
-    esp_err_t err = esp_http_client_open(client, 0);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG3, "Failed to open HTTP connection: %s", esp_err_to_name(err));
-    } else {
-        ESP_LOGW(TAG3, "Fetch 2");
-        content_length = esp_http_client_fetch_headers(client);
-        if (content_length < 0) {
-            ESP_LOGE(TAG3, "HTTP client fetch headers failed");
-        } else {
-            ESP_LOGW(TAG3, "Response 2");
-            int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
-            if (data_read >= 0) {
-                ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %d",
-                esp_http_client_get_status_code(client),
-                esp_http_client_get_content_length(client));
-                //ESP_LOG_BUFFER_CHAR(TAG2, output_buffer, 188);
-                //ESP_LOG_BUFFER_HEX(TAG2, output_buffer, strlen(output_buffer));
-                for(int i = 0; i < esp_http_client_get_content_length(client); i++) {
-                    putchar(output_buffer[i]);
-                }
-                putchar('\r');
-                putchar('\n');
-            } else {
-                ESP_LOGE(TAG3, "Failed to read response");
-            }
-        }
-    }
-    ESP_LOGW(TAG, "Limpiare");
-    esp_http_client_close(client);
-    esp_http_client_cleanup(client);
-    ESP_LOGI(TAG, "esp_get_free_heap_size: %d", esp_get_free_heap_size ());
-}
-
-static void https_telegram_sendMessage_perform_post(void) {
+static void https_telegram_sendMessage(void) {
 
 
 	/* Format for sending messages
@@ -535,17 +377,18 @@ static void https_telegram_sendMessage_perform_post(void) {
 
 
 	ESP_LOGW(TAG3, "Enviare POST");
-	/*Here you add the text and the chat id
-	 * The format for the json for the telegram request is: {"chat_id":123456789,"text":"Here goes the message"}
-	  */
-	// The example had this, but to add the chat id easierly I decided not to use a pointer
-	//const char *post_data = "{\"chat_id\":852596694,\"text\":\"Envio de post\"}";
-	char post_data[512] = "";
-	sprintf(post_data,"{\"chat_id\":%s,\"text\":\"Here goes the message from post\"}",chat_ID2);
-    //ESP_LOGW(TAG, "El json es es: %s",post_data);
+
+	cJSON *root;
+	root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "chat_id", chat_ID2);
+	cJSON_AddStringToObject(root, "text", "Here goes the message from post json");
+	const char *my_json_string = cJSON_Print(root);
+	ESP_LOGI(TAG, "my_json_string\n%s",my_json_string);
+	cJSON_Delete(root);
+
     esp_http_client_set_method(client, HTTP_METHOD_POST);
     esp_http_client_set_header(client, "Content-Type", "application/json");
-    esp_http_client_set_post_field(client, post_data, strlen(post_data));
+    esp_http_client_set_post_field(client, my_json_string, strlen(my_json_string));
 
     esp_err_t err = esp_http_client_perform(client);
     if (err == ESP_OK) {
@@ -553,6 +396,11 @@ static void https_telegram_sendMessage_perform_post(void) {
                 esp_http_client_get_status_code(client),
                 esp_http_client_get_content_length(client));
         ESP_LOGW(TAG3, "Desde Perform el output es: %s",output_buffer);
+    	cJSON *root = cJSON_Parse(output_buffer);
+    	//ESP_LOGW(TAG2, "Recibi el json");
+    	JSON_Analyze(root);
+    	//ESP_LOGW(TAG2, "Borrare el json");
+    	cJSON_Delete(root);
 
     } else {
         ESP_LOGE(TAG3, "HTTP POST request failed: %s", esp_err_to_name(err));
@@ -572,17 +420,10 @@ static void http_test_task(void *pvParameters) {
     ESP_LOGW(TAG, "Wait 2 second before start");
     vTaskDelay(2000 / portTICK_PERIOD_MS);
 
-    ESP_LOGW(TAG, "https_telegram_getMe_perform");
-    https_telegram_getMe_perform();
-    /* The functions https_telegram_getMe_native_get and https_telegram_sendMessage_native_get usually reboot the esp32 at when you use it after another and
-     *  the second one finish, but I don't know why. Either way, it still send the message and obtain the getMe response, but the perform way is better
-     *  for both options, especially for sending message with Json.*/
-    //ESP_LOGW(TAG, "https_telegram_getMe_native_get");
-    //https_telegram_getMe_native_get();
-    //ESP_LOGW(TAG, "https_telegram_sendMessage_native_get");
-    //https_telegram_sendMessage_native_get();
-    ESP_LOGW(TAG, "https_telegram_sendMessage_perform_post");
-    https_telegram_sendMessage_perform_post();
+    ESP_LOGW(TAG, "https_telegram_getMe");
+    https_telegram_getMe();
+    ESP_LOGW(TAG, "https_telegram_sendMessage");
+    https_telegram_sendMessage();
 
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
