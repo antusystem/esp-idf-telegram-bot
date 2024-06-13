@@ -25,7 +25,8 @@
 #include "esp_http_client.h"
 #include "driver/gpio.h"
 #include "freertos/event_groups.h"
-#include "network_handler.h"
+#include "wifi_handler.h"
+#include "rest_handler.h"
 
 //Pin connected to a led
 #define LED (GPIO_NUM_13)
