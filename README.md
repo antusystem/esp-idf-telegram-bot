@@ -39,9 +39,10 @@ Check de IDFPATH in the configurations of the proyect
 
 ## Log
 
-* Last compile: January 11th, 2021.
-* Last test: January 11th, 2021.
-* Last compile espidf version: v4.2
+* Last compile: June 22th, 2024.
+* Last test: January 22th, 2024.
+* Last compile espidf version: v4.4.7
+* ESP-IDF VSCode Extension Version: v1.7.1
 
 ## (Possibles) To Do
 
