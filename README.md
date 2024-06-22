@@ -40,7 +40,7 @@ Check de IDFPATH in the configurations of the proyect
 ## Log
 
 * Last compile: June 22th, 2024.
-* Last test: January 22th, 2024.
+* Last test: June 22th, 2024.
 * Last compile espidf version: v4.4.7
 * ESP-IDF VSCode Extension Version: v1.7.1
 
@@ -49,6 +49,7 @@ Check de IDFPATH in the configurations of the proyect
 * Read and organize the response Json (probably using Cjson).
 * Discard the native examples from the master branch and create separe functions for getMe and sendMessage.
 * Determinate what other type of data can be send with the esp32 to make the code.
+* Update to use the latest version of ESP-IDF (5.2.2 right now)
 
 ## License
 MIT License
